@@ -36,7 +36,10 @@ code_lookup = {}
 
 
 def normalise_name(name):
-    return re.sub(r"['`\.]", "", name).replace('&', 'and').lower()
+    name = re.sub(r"['`\.]", "", name).replace('&', 'and').lower().strip()
+    name = re.sub(r"saint ", "st ", name)
+    name = re.sub(r" [ab][a-z]$", '', name)
+    return name
 
 
 with open('./gss-codes.csv', 'r') as csvfile:
@@ -47,6 +50,9 @@ with open('./gss-codes.csv', 'r') as csvfile:
 
 def get_gss_code(constituency, ward):
     key = (normalise_name(constituency), normalise_name(ward))
+    if key == ('lambeth and southwark', 'stleonards'):
+        return 'E05000428'
+
     try:
         return code_lookup[key]
     except KeyError:
