@@ -104,10 +104,10 @@ for ws in wb.worksheets:
 
     constituency = ws.title
     num_candidates = len([cell for cell in ws.rows[2][57:] if cell.value is not None]) - 7
-    header = ['Constituency', 'Ward'] + lookup_candidates([cell.value for cell in
-                                                           ws.rows[2][57:57 + num_candidates] +
-                                                           ws.rows[2][57 + num_candidates + 1:57 + num_candidates + 6]],
-                                                          constituency)
+    header = ['Ward'] + lookup_candidates([cell.value for cell in
+                                           ws.rows[2][57:57 + num_candidates] +
+                                           ws.rows[2][57 + num_candidates + 1:57 + num_candidates + 6]],
+                                           constituency)
     for row in ws.rows[3:]:
         if row[0].value == 'Key':
             break
