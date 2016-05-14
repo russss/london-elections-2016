@@ -27,7 +27,7 @@ def lookup_candidates(row, competition):
 
 def write(filename, header, result):
     print("Writing %s..." % filename)
-    with open(filename, 'w', newline='') as csvfile:
+    with open("./data/" + filename, 'w', newline='') as csvfile:
         writer = csv.writer(csvfile)
         writer.writerow(header)
         writer.writerows(result)
@@ -93,3 +93,28 @@ for ws in wb.worksheets:
             result.append([constituency] + [row[1].value] + [cell.value for cell in row[38:50] + row[51:56]])
 
 write('london-member.csv', header, result)
+
+
+# Constituency assembly member:
+
+for ws in wb.worksheets:
+    if ws.title == 'Keys':
+        break
+    result = []
+
+    constituency = ws.title
+    num_candidates = len([cell for cell in ws.rows[2][57:] if cell.value is not None]) - 7
+    header = ['Constituency', 'Ward'] + lookup_candidates([cell.value for cell in
+                                                           ws.rows[2][57:57 + num_candidates] +
+                                                           ws.rows[2][57 + num_candidates + 1:57 + num_candidates + 6]],
+                                                          constituency)
+    for row in ws.rows[3:]:
+        if row[0].value == 'Key':
+            break
+        if row[0].value is not None:
+            result.append([row[1].value] + [cell.value for cell in row[57:57 + num_candidates] +
+                                            row[57 + num_candidates + 1:57 + num_candidates + 6]])
+
+    filename = "constituency-member-%s.csv" % constituency.replace('&', 'and').replace(' ', '-').lower()
+
+    write(filename, header, result)
