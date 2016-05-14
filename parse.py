@@ -32,15 +32,37 @@ def write(filename, header, result):
         writer.writerow(header)
         writer.writerows(result)
 
+code_lookup = {}
+
+
+def normalise_name(name):
+    return re.sub(r"['`\.]", "", name).replace('&', 'and').lower()
+
+
+with open('./gss-codes.csv', 'r') as csvfile:
+    reader = csv.reader(csvfile, delimiter="\t")
+    for row in reader:
+        code_lookup[(normalise_name(row[0]), normalise_name(row[1]))] = row[2]
+
+
+def get_gss_code(constituency, ward):
+    key = (normalise_name(constituency), normalise_name(ward))
+    try:
+        return code_lookup[key]
+    except KeyError:
+        if 'postal' not in key[1]:
+            print("Can't find GSS code for %s" % str(key))
+        return ''
+
 
 # Mayor, first pref:
 
 result = []
 ws = wb.worksheets[0]
 
-header = ['Constituency', 'Ward'] + lookup_candidates([cell.value for cell in
-                                                       ws.rows[2][2:13] + ws.rows[2][15:20]],
-                                                      'London Mayor')
+header = ['GSS Code', 'Constituency', 'Ward'] + lookup_candidates([cell.value for cell in
+                                                                   ws.rows[2][2:13] + ws.rows[2][15:20]],
+                                                                  'London Mayor')
 for ws in wb.worksheets:
     if ws.title == 'Keys':
         break
@@ -49,7 +71,8 @@ for ws in wb.worksheets:
         if row[0].value == 'Key':
             break
         if row[0].value is not None:
-            result.append([constituency] + [cell.value for cell in row[1:13] + row[15:20]])
+            result.append([get_gss_code(constituency, row[1].value), constituency] +
+                          [cell.value for cell in row[1:13] + row[15:20]])
 
 write('london-mayor-first-preference.csv', header, result)
 
@@ -58,7 +81,7 @@ write('london-mayor-first-preference.csv', header, result)
 result = []
 ws = wb.worksheets[0]
 
-header = ['Constituency', 'Ward'] + lookup_candidates([cell.value for cell in
+header = ['GSS Code', 'Constituency', 'Ward'] + lookup_candidates([cell.value for cell in
                                                        ws.rows[2][21:33] + ws.rows[2][34:37]],
                                                       'London Mayor')
 for ws in wb.worksheets:
@@ -69,7 +92,8 @@ for ws in wb.worksheets:
         if row[0].value == 'Key':
             break
         if row[0].value is not None:
-            result.append([constituency] + [row[1].value] + [cell.value for cell in row[21:33] + row[34:37]])
+            result.append([get_gss_code(constituency, row[1].value), constituency] +
+                          [row[1].value] + [cell.value for cell in row[21:33] + row[34:37]])
 
 write('london-mayor-second-preference.csv', header, result)
 
@@ -79,7 +103,7 @@ write('london-mayor-second-preference.csv', header, result)
 result = []
 ws = wb.worksheets[0]
 
-header = ['Constituency', 'Ward'] + lookup_candidates([cell.value for cell in
+header = ['GSS Code', 'Constituency', 'Ward'] + lookup_candidates([cell.value for cell in
                                                        ws.rows[2][38:50] + ws.rows[2][51:56]],
                                                       'London-wide Assembly')
 for ws in wb.worksheets:
@@ -90,7 +114,8 @@ for ws in wb.worksheets:
         if row[0].value == 'Key':
             break
         if row[0].value is not None:
-            result.append([constituency] + [row[1].value] + [cell.value for cell in row[38:50] + row[51:56]])
+            result.append([get_gss_code(constituency, row[1].value), constituency] +
+                          [row[1].value] + [cell.value for cell in row[38:50] + row[51:56]])
 
 write('london-member.csv', header, result)
 
@@ -104,7 +129,7 @@ for ws in wb.worksheets:
 
     constituency = ws.title
     num_candidates = len([cell for cell in ws.rows[2][57:] if cell.value is not None]) - 7
-    header = ['Ward'] + lookup_candidates([cell.value for cell in
+    header = ['GSS Code', 'Ward'] + lookup_candidates([cell.value for cell in
                                            ws.rows[2][57:57 + num_candidates] +
                                            ws.rows[2][57 + num_candidates + 1:57 + num_candidates + 6]],
                                            constituency)
@@ -112,8 +137,9 @@ for ws in wb.worksheets:
         if row[0].value == 'Key':
             break
         if row[0].value is not None:
-            result.append([row[1].value] + [cell.value for cell in row[57:57 + num_candidates] +
-                                            row[57 + num_candidates + 1:57 + num_candidates + 6]])
+            result.append([get_gss_code(constituency, row[1].value), row[1].value] +
+                          [cell.value for cell in row[57:57 + num_candidates] +
+                           row[57 + num_candidates + 1:57 + num_candidates + 6]])
 
     filename = "constituency-member-%s.csv" % constituency.replace('&', 'and').replace(' ', '-').lower()
 
